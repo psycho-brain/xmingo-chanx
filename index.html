@@ -4,219 +4,251 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
+　　　<meta http-equiv="Pragma" content="no-cache">
+　　　<meta http-equiv="Expires" content="0">
     <title>シンプルクジ引きアプリ</title>
-    <style id="custom-theme-style">
-        :root {
-            --bg-color: #f5f7fa;
-            --text-color: #333333;
-            --btn-color: #ff4757;
-            --btn-radius: 8px;
-        }
+    <style id="app-design">
+        /* 基本デザイン（管理画面から変更可能） */
         body {
-            background-color: var(--bg-color);
-            background-image: none;
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            color: var(--text-color);
-            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-family: sans-serif;
+            background-color: #f7f7f7;
+            color: #333333;
             margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-    </style>
-    <style id="admin-custom-css">/* 管理画面から追加されるカスタムCSS */</style>
-    <style>
-        /* 固定の基本レイアウトCSS */
-        .app-container {
-            width: 100%;
-            max-width: 500px;
             padding: 20px;
-            box-sizing: border-box;
             text-align: center;
-            position: relative;
         }
-        .header-admin-btn {
+        .header-right {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            cursor: pointer;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            transition: all 0.2s;
+        }
+        /* クジ引きボタンの形状バリエーション */
+        .btn-square { border-radius: 0px; }
+        .btn-round { border-radius: 8px; }
+        .btn-capsule { border-radius: 50px; }
+        .btn-circle { border-radius: 50%; width: 120px; height: 120px; padding: 0; }
+
+        #main-draw-btn {
+            background-color: #ff4757;
+            color: #ffffff;
+            font-size: 24px;
+            padding: 15px 40px;
+            margin: 40px auto;
+            display: block;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            text-align: left;
+            position: relative;
+            color: #333 !important;
+        }
+        .close-btn {
             position: absolute;
             top: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.1);
-            border: 1px solid rgba(0,0,0,0.2);
-            padding: 6px 12px;
-            border-radius: 4px;
+            right: 15px;
+            font-size: 24px;
             cursor: pointer;
-            font-size: 13px;
-            color: inherit;
         }
-        .main-card {
-            background: rgba(255,255,255,0.9);
-            padding: 30px 20px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
+        .item-row {
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .app-title { margin: 0 0 10px 0; font-size: 24px; }
-        .app-desc { margin: 0 0 30px 0; font-size: 14px; opacity: 0.8; }
-        
-        /* クジ引きボタン（形を可変に） */
-        .kuji-trigger-btn {
-            background-color: var(--btn-color);
-            border: none;
-            color: white;
-            padding: 16px 40px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: var(--btn-radius);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-            transition: transform 0.1s, opacity 0.2s;
-            width: 80%;
-            max-width: 280px;
+        .preview-img {
+            max-width: 60px;
+            max-height: 60px;
+            object-fit: contain;
+            display: block;
         }
-        .kuji-trigger-btn:active { transform: scale(0.95); }
-        .kuji-trigger-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .footer-btns { display: flex; justify-content: center; gap: 15px; margin-top: 10px; }
-        .sub-btn { background: none; border: none; text-decoration: underline; cursor: pointer; color: inherit; font-size: 14px; opacity: 0.7; }
-        .sub-btn:hover { opacity: 1; }
-
-        /* モーダル基本 */
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;
-        }
-        .modal.active { display: flex; }
-        .modal-content {
-            background: white; color: #333; padding: 25px; border-radius: 12px;
-            width: 90%; max-width: 450px; max-height: 85vh; overflow-y: auto; text-align: left; position: relative;
-        }
-        .modal-close { position: absolute; top: 15px; right: 15px; font-size: 20px; cursor: pointer; border: none; background: none; }
-        
-        /* 管理画面用スタイル */
-        .admin-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
-        .admin-nav { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
-        .nav-tab { cursor: pointer; padding: 4px 8px; font-size: 13px; border-radius: 4px; border: 1px solid transparent; }
-        .nav-tab.active { background: #007bff; color: white; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        
-        .form-group { margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px; }
-        .form-group label { font-size: 12px; font-weight: bold; color: #555; }
-        .form-group input[type="text"], .form-group input[type="number"], .form-group textarea, .form-group select {
-            padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;
-        }
-        .btn-primary { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; }
-        .btn-danger { background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
-        
-        /* アイテムリスト */
-        .item-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        .item-table th, .item-table td { border-bottom: 1px solid #eee; padding: 8px 4px; text-align: left; }
-        .img-preview-sm { width: 35px; height: 35px; object-fit: cover; border-radius: 4px; background: #eee; }
-        
-        /* 画像アップロード枠 */
-        .image-upload-wrapper { position: relative; display: inline-block; }
-        .image-clear-btn {
-            position: absolute; top: -5px; right: -5px; background: #dc3545; color: white;
-            border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 11px;
-            cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;
-        }
-        
-        /* 当選画面表示 */
-        .win-display { text-align: center; padding: 10px; }
-        .win-msg { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #ff4757; }
-        .win-name { font-size: 22px; font-weight: bold; margin-bottom: 15px; }
-        .win-img { max-width: 100%; max-height: 200px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        
-        /* 履歴リスト */
-        .history-list { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; }
-        .history-item { padding: 8px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-size: 13px; }
-        .history-date { color: #888; font-size: 11px; }
     </style>
+    <!-- 自由なカスタムCSS用の上書き枠 -->
+    <style id="custom-css"></style>
 </head>
 <body>
 
-    <div class="app-container">
-        <!-- 管理画面ボタン(右上に配置) -->
-        <button class="header-admin-btn" onclick="openAdminModal()">⚙ 管理画面</button>
+    <!-- 右上管理用エリア -->
+    <div class="header-right">
+        <button onclick="syncData()" style="background:#747d8c; color:#fff;">更新（同期）</button>
+        <button onclick="openAdmin()" style="background:#2f3542; color:#fff;">管理画面</button>
+    </div>
 
-        <!-- メイン画面 -->
-        <div class="main-card">
-            <h1 class="app-title" id="display-title">ドキドキクジ引き</h1>
-            <p class="app-desc" id="display-desc">何が当たるかはお楽しみ！1日3回まで引くことができます。</p>
-            
-            <button class="kuji-trigger-btn" id="kuji-btn" onclick="drawKuji()">クジを引く</button>
-            <div id="remaining-count-view" style="font-size: 12px; margin-top: 10px; opacity: 0.7;"></div>
-        </div>
-
-        <div class="footer-btns">
-            <button class="sub-btn" onclick="openHistoryModal()">📋 当選履歴を見る</button>
-        </div>
+    <!-- トップ画像・メイン画面 -->
+    <div style="margin-top: 60px;">
+        <h1 id="view-title">お楽しみクジ引き</h1>
+        <p id="view-desc">下のボタンを押してクジを引こう！1日3回まで引けます。</p>
+        <p id="draw-count-status" style="font-weight: bold;"></p>
+        
+        <!-- クジ引きボタン（1個のみ） -->
+        <button id="main-draw-btn" class="btn-round" onclick="drawKuji()">クジを引く</button>
+        
+        <button onclick="openHistory()" style="background:#5352ed; color:#fff; margin-top:20px;">当選履歴を見る</button>
     </div>
 
     <!-- 当選画面モーダル -->
-    <div class="modal" id="win-modal">
+    <div id="modal-result" class="modal">
         <div class="modal-content" style="text-align: center;">
-            <button class="modal-close" onclick="closeModal('win-modal')">×</button>
-            <div class="win-display">
-                <div class="win-msg" id="win-phrase-view">おめでとうございます！</div>
-                <div id="win-img-container"></div>
-                <div class="win-name" id="win-name-view">アイテム名</div>
-                <p style="font-size:11px; color:#888; margin:0;">※画像がある場合は長押しや右クリックで保存できます</p>
-            </div>
+            <span class="close-btn" onclick="closeModal('modal-result')">&times;</span>
+            <h2 id="result-serif" style="color: #ff4757;">おめでとうございます！</h2>
+            <hr>
+            <h3 id="result-item-name" style="font-size: 28px; margin: 20px 0;">---</h3>
+            <div id="result-image-container"></div>
+            <p style="font-size:12px; color:#aaa; margin-top:15px;">※画像を保存する場合は右クリックまたは長押ししてください</p>
         </div>
     </div>
 
     <!-- 当選履歴モーダル -->
-    <div class="modal" id="history-modal">
+    <div id="modal-history" class="modal">
         <div class="modal-content">
-            <button class="modal-close" onclick="closeModal('history-modal')">×</button>
-            <h3>📋 当選履歴</h3>
-            <ul class="history-list" id="history-ul">
-                <!-- 履歴がシンプルにJavaScriptで挿入されます -->
-            </ul>
+            <span class="close-btn" onclick="closeModal('modal-history')">&times;</span>
+            <h2>当選履歴</h2>
+            <div id="history-list"></div>
         </div>
     </div>
 
     <!-- 管理画面モーダル -->
-    <div class="modal" id="admin-modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeModal('admin-modal')">×</button>
+    <div id="modal-admin" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <span class="close-btn" onclick="closeModal('modal-admin')">&times;</span>
+            <h2>管理画面（管理者2名用）</h2>
             
-            <div class="admin-header">
-                <h3 style="margin:0;">⚙ 管理画面 (管理人2名用)</h3>
-                <button class="btn-primary" style="padding:4px 8px; font-size:12px;" onclick="syncData()">更新(同期)</button>
+            <!-- ログインフォーム -->
+            <div id="admin-login-box">
+                <p>パスワードを入力してください：</p>
+                <input type="password" id="admin-pass" style="padding:10px; width:200px;">
+                <button onclick="checkLogin()" style="background:#2ed573; color:#fff;">ログイン</button>
             </div>
 
-            <!-- パスワードロック用の表示領域 -->
-            <div id="admin-lock-zone">
-                <div class="form-group">
-                    <label>パスワードを入力してください</label>
-                    <input type="password" id="admin-pass-input" placeholder="••••">
-                </div>
-                <button class="btn-primary" onclick="checkAdminLogin()">ログイン</button>
-            </div>
-
-            <!-- ログイン後に表示されるコンテンツ領域 -->
-            <div id="admin-content-zone" style="display: none;">
-                <div class="admin-nav">
-                    <div class="nav-tab active" id="tab-btn-items" onclick="switchTab('items')">アイテム設定</div>
-                    <div class="nav-tab" id="tab-btn-design" onclick="switchTab('design')">デザイン</div>
-                    <div class="nav-tab" id="tab-btn-rules" onclick="switchTab('rules')">制限・セリフ</div>
+            <!-- 管理コンテンツ（ログイン後表示） -->
+            <div id="admin-main-box" style="display: none;">
+                <div style="background:#f1f2f6; padding:15px; margin-bottom:15px; border-radius:5px;">
+                    <h3>制限・セリフ設定</h3>
+                    <label>1日のプレイ可能回数: <input type="number" id="cfg-max-draw" min="1" style="width:60px; padding:5px;"></label>
+                    <button onclick="resetTodayCount()" style="background:#ffa502; color:#fff; padding:5px 10px; font-size:12px; margin-left:10px;">本日の回数を全員リセット</button>
+                    <br><br>
+                    <label>当選時の共通セリフ: <input type="text" id="cfg-serif" style="width:80%; padding:5px;"></label>
                 </div>
 
-                <!-- タブ1: アイテム設定 -->
-                <div class="tab-content active" id="tab-items">
-                    <div style="background:#f9f9f9; padding:10px; border-radius:6px; margin-bottom:15px;">
-                        <h4 style="margin:0 0 10px 0; font-size:14px;">新規アイテム追加</h4>
-                        <div class="form-group">
-                            <label>アイテム名称</label>
-                            <input type="text" id="new-item-name" placeholder="特賞：プレミアムぬいぐるみ">
+                <div style="background:#f1f2f6; padding:15px; margin-bottom:15px; border-radius:5px;">
+                    <h3>デザイン設定</h3>
+                    背景色: <input type="color" id="cfg-bg-color"> | 
+                    文字色: <input type="color" id="cfg-text-color"> | 
+                    ボタン色: <input type="color" id="cfg-btn-color"><br><br>
+                    背景画像URL: <input type="text" id="cfg-bg-img" style="width:80%; padding:5px;"><br><br>
+                    ボタンの形: 
+                    <select id="cfg-btn-shape" style="padding:5px;">
+                        <option value="btn-square">四角</option>
+                        <option value="btn-round">角丸</option>
+                        <option value="btn-capsule">カプセル型</option>
+                        <option value="btn-circle">正円</option>
+                    </select>
+                    <br><br>
+                    カスタムCSS:<br>
+                    <textarea id="cfg-custom-css" rows="4" style="width:95%; font-family:monospace;" placeholder="body { border: 5px solid red; }"></textarea>
+                </div>
+
+                <div style="background:#f1f2f6; padding:15px; border-radius:5px;">
+                    <h3>アイテム管理</h3>
+                    <div style="border: 1px dashed #ccc; padding: 10px; margin-bottom: 10px; background:#fff;">
+                        <strong>【新規アイテム追加】</strong><br><br>
+                        名称: <input type="text" id="new-item-name" style="width:200px; padding:5px;">
+                        個数(1-100): <input type="number" id="new-item-count" value="1" min="1" max="100" style="width:60px; padding:5px;"><br><br>
+                        画像: <input type="file" id="new-item-file" accept="image/*" onchange="handleFileSelect(this)"><br>
+                        <div id="new-img-preview-area" style="margin-top:5px; display:none;">
+                            <img id="new-img-preview" class="preview-img">
+                            <button onclick="clearUploadImage()" style="background:#ff4757; color:#fff; padding:2px 5px; font-size:12px; margin-top:2px;">画像を削除</button>
                         </div>
-                        <div class="form-group">
-                            <label>個数 (1〜100)</label>
+                        <br>
+                        <button onclick="addItem()" style="background:#2ed573; color:#fff; width:100%;">このアイテムを追加登録する</button>
+                    </div>
+
+                    <div id="admin-item-list"></div>
+                </div>
+                
+                <br>
+                <button onclick="saveAdminSettings()" style="background:#1e90ff; color:#fff; width:100%; padding:12px; font-size:18px; font-weight:bold;">すべての管理設定を保存する</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 初期設定とデータ定義（コードから直接複数追加可能） ---
+        const INITIAL_ITEMS = [
+            { id: "init_1", name: "サンプル特賞アイテム", count: 1, img: "" },
+            { id: "init_2", name: "サンプルA賞アイテム", count: 10, img: "" },
+            { id: "init_3", name: "サンプルB賞アイテム", count: 50, img: "" }
+        ];
+
+        // グローバル変数群
+        let items = [];
+        let historyLog = [];
+        let config = {
+            maxDraw: 3,
+            serif: "おめでとうございます！🎉",
+            bgColor: "#f7f7f7",
+            textColor: "#333333",
+            btnColor: "#ff4757",
+            bgImg: "",
+            btnShape: "btn-round",
+            customCss: ""
+        };
+        let tmpImageBase64 = "";
+
+        // アプリ起動時の初期化
+        window.onload = function() {
+            // ローカルストレージからデータ復元、無ければ初期値を充当
+            items = JSON.parse(localStorage.getItem('kuji_items'));
+            if (!items || items.length === 0) {
+                items = INITIAL_ITEMS;
+                localStorage.setItem('kuji_items', JSON.stringify(items));
+            }
+            historyLog = JSON.parse(localStorage.getItem('kuji_history')) || [];
+            
+            const savedConfig = JSON.parse(localStorage.getItem('kuji_config'));
+            if (savedConfig) config = savedConfig;
+
+            // 深夜0時のリセット判定
+            checkDateReset();
+            
+            // 画面反映
+            applyDesign();
+            updateDrawStatus();
+
+            // ブラウザ「更新」後も管理画面のログイン状態を継続する仕組み (sessionStorage)
+            if (sessionStorage.getItem('admin_logged_in') === 'true') {
+                document.getElementById('admin-login-box').style.display = 'none';
+                document.getElementById('admin-main-box').style.display = 'block';
+                renderAdminItems();
+                fillAdminFields();
+                // もしセッションが残っていたら管理画面を開いたままにする
+                openAdmin();
+            }
+        };
+
+        // 深夜0時をまたいだら自動的にクジ引き回数をリセットする処理
+        function checkDateReset() {
