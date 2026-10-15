@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>シンプルクジ引きアプリ</title>
+    <style id="custom-theme-style">
+        :root {
+            --bg-color: #f5f7fa;
+            --text-color: #333333;
+            --btn-color: #ff4757;
+            --btn-radius: 8px;
+        }
+        body {
+            background-color: var(--bg-color);
+            background-image: none;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: var(--text-color);
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+    <style id="admin-custom-css">/* 管理画面から追加されるカスタムCSS */</style>
+    <style>
+        /* 固定の基本レイアウトCSS */
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+            position: relative;
+        }
+        .header-admin-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.2);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            color: inherit;
+        }
+        .main-card {
+            background: rgba(255,255,255,0.9);
+            padding: 30px 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .app-title { margin: 0 0 10px 0; font-size: 24px; }
+        .app-desc { margin: 0 0 30px 0; font-size: 14px; opacity: 0.8; }
+        
+        /* クジ引きボタン（形を可変に） */
+        .kuji-trigger-btn {
+            background-color: var(--btn-color);
+            border: none;
+            color: white;
+            padding: 16px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: var(--btn-radius);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            transition: transform 0.1s, opacity 0.2s;
+            width: 80%;
+            max-width: 280px;
+        }
+        .kuji-trigger-btn:active { transform: scale(0.95); }
+        .kuji-trigger-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .footer-btns { display: flex; justify-content: center; gap: 15px; margin-top: 10px; }
+        .sub-btn { background: none; border: none; text-decoration: underline; cursor: pointer; color: inherit; font-size: 14px; opacity: 0.7; }
+        .sub-btn:hover { opacity: 1; }
+
+        /* モーダル基本 */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white; color: #333; padding: 25px; border-radius: 12px;
+            width: 90%; max-width: 450px; max-height: 85vh; overflow-y: auto; text-align: left; position: relative;
+        }
+        .modal-close { position: absolute; top: 15px; right: 15px; font-size: 20px; cursor: pointer; border: none; background: none; }
+        
+        /* 管理画面用スタイル */
+        .admin-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .admin-nav { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
+        .nav-tab { cursor: pointer; padding: 4px 8px; font-size: 13px; border-radius: 4px; border: 1px solid transparent; }
+        .nav-tab.active { background: #007bff; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .form-group { margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px; }
+        .form-group label { font-size: 12px; font-weight: bold; color: #555; }
+        .form-group input[type="text"], .form-group input[type="number"], .form-group textarea, .form-group select {
+            padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;
+        }
+        .btn-primary { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .btn-danger { background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        
+        /* アイテムリスト */
+        .item-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        .item-table th, .item-table td { border-bottom: 1px solid #eee; padding: 8px 4px; text-align: left; }
+        .img-preview-sm { width: 35px; height: 35px; object-fit: cover; border-radius: 4px; background: #eee; }
+        
+        /* 画像アップロード枠 */
+        .image-upload-wrapper { position: relative; display: inline-block; }
+        .image-clear-btn {
+            position: absolute; top: -5px; right: -5px; background: #dc3545; color: white;
+            border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 11px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;
+        }
+        
+        /* 当選画面表示 */
+        .win-display { text-align: center; padding: 10px; }
+        .win-msg { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #ff4757; }
+        .win-name { font-size: 22px; font-weight: bold; margin-bottom: 15px; }
+        .win-img { max-width: 100%; max-height: 200px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        
+        /* 履歴リスト */
+        .history-list { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; }
+        .history-item { padding: 8px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-size: 13px; }
+        .history-date { color: #888; font-size: 11px; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- 管理画面ボタン(右上に配置) -->
+        <button class="header-admin-btn" onclick="openAdminModal()">⚙ 管理画面</button>
+
+        <!-- メイン画面 -->
+        <div class="main-card">
+            <h1 class="app-title" id="display-title">ドキドキクジ引き</h1>
+            <p class="app-desc" id="display-desc">何が当たるかはお楽しみ！1日3回まで引くことができます。</p>
+            
+            <button class="kuji-trigger-btn" id="kuji-btn" onclick="drawKuji()">クジを引く</button>
+            <div id="remaining-count-view" style="font-size: 12px; margin-top: 10px; opacity: 0.7;"></div>
+        </div>
+
+        <div class="footer-btns">
+            <button class="sub-btn" onclick="openHistoryModal()">📋 当選履歴を見る</button>
+        </div>
+    </div>
+
+    <!-- 当選画面モーダル -->
+    <div class="modal" id="win-modal">
+        <div class="modal-content" style="text-align: center;">
+            <button class="modal-close" onclick="closeModal('win-modal')">×</button>
+            <div class="win-display">
+                <div class="win-msg" id="win-phrase-view">おめでとうございます！</div>
+                <div id="win-img-container"></div>
+                <div class="win-name" id="win-name-view">アイテム名</div>
+                <p style="font-size:11px; color:#888; margin:0;">※画像がある場合は長押しや右クリックで保存できます</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 当選履歴モーダル -->
+    <div class="modal" id="history-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('history-modal')">×</button>
+            <h3>📋 当選履歴</h3>
+            <ul class="history-list" id="history-ul">
+                <!-- 履歴がシンプルにJavaScriptで挿入されます -->
+            </ul>
+        </div>
+    </div>
+
+    <!-- 管理画面モーダル -->
+    <div class="modal" id="admin-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('admin-modal')">×</button>
+            
+            <div class="admin-header">
+                <h3 style="margin:0;">⚙ 管理画面 (管理人2名用)</h3>
+                <button class="btn-primary" style="padding:4px 8px; font-size:12px;" onclick="syncData()">更新(同期)</button>
+            </div>
+
+            <!-- パスワードロック用の表示領域 -->
+            <div id="admin-lock-zone">
+                <div class="form-group">
+                    <label>パスワードを入力してください</label>
+                    <input type="password" id="admin-pass-input" placeholder="••••">
+                </div>
+                <button class="btn-primary" onclick="checkAdminLogin()">ログイン</button>
+            </div>
+
+            <!-- ログイン後に表示されるコンテンツ領域 -->
+            <div id="admin-content-zone" style="display: none;">
+                <div class="admin-nav">
+                    <div class="nav-tab active" id="tab-btn-items" onclick="switchTab('items')">アイテム設定</div>
+                    <div class="nav-tab" id="tab-btn-design" onclick="switchTab('design')">デザイン</div>
+                    <div class="nav-tab" id="tab-btn-rules" onclick="switchTab('rules')">制限・セリフ</div>
+                </div>
+
+                <!-- タブ1: アイテム設定 -->
+                <div class="tab-content active" id="tab-items">
+                    <div style="background:#f9f9f9; padding:10px; border-radius:6px; margin-bottom:15px;">
+                        <h4 style="margin:0 0 10px 0; font-size:14px;">新規アイテム追加</h4>
+                        <div class="form-group">
+                            <label>アイテム名称</label>
+                            <input type="text" id="new-item-name" placeholder="特賞：プレミアムぬいぐるみ">
+                        </div>
+                        <div class="form-group">
+                            <label>個数 (1〜100)</label>
